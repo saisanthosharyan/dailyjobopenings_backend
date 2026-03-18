@@ -6,9 +6,9 @@ const slugify = require("slugify");
 const createJob = async (req, res) => {
   try {
 
-    const { companyName, jobTitle, location } = req.body;
+    const { companyName, jobTitle, location, jobRole, experienceLevel, eligibleBatches } = req.body;
 
-    const slug = slugify(`${companyName}-${jobTitle}-${location}`, {
+    const slug = slugify(`${companyName}-${jobTitle}-${location}-${jobRole}-${experienceLevel}-${eligibleBatches}`, {
       lower: true,
       strict: true
     });
@@ -115,9 +115,109 @@ const getJobBySlug = async (req, res) => {
   }
 };
 
+// GET /api/jobs/latest this controller is for homepage to show latest 3 jobs with only title and company name for alert bar
+const getLatestJobs = async (req, res) => {
+  try {
+    const jobs = await Job.find({})
+      .sort({ createdAt: -1 }) // latest first
+      .limit(3) // only 3 jobs
+      .select("companyName"); // only required fields
+
+    res.status(200).json({
+      success: true,
+      count: jobs.length,
+      jobs,
+    });
+  } catch (error) {
+    console.error("Error fetching latest jobs:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+// GET /api/jobs/similar/:jobId this controller is for fetching the similar jobs in view jobs page
+const getSimilarJobs = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+
+    // 1. Get current job
+    const currentJob = await Job.findById(jobId);
+
+    if (!currentJob) {
+      return res.status(404).json({
+        success: false,
+        message: "Job not found",
+      });
+    }
+
+    // 2. Fetch candidate jobs (filtered, not full DB)
+    const candidates = await Job.find({
+      _id: { $ne: jobId },
+      experienceLevel: currentJob.experienceLevel, // basic filter
+    }).limit(20); // limit for performance
+
+    // 3. Apply scoring
+    const scoredJobs = candidates.map((job) => {
+      let score = 0;
+
+      // 🔥 Role match (partial match)
+      if (
+        job.jobTitle.toLowerCase().includes(currentJob.jobTitle.toLowerCase()) ||
+        currentJob.jobTitle.toLowerCase().includes(job.jobTitle.toLowerCase())
+      ) {
+        score += 5;
+      }
+
+      // 🔥 Skills match
+      if (job.skills && currentJob.skills) {
+        const commonSkills = job.skills.filter((skill) =>
+          currentJob.skills.includes(skill)
+        );
+        score += commonSkills.length * 2;
+      }
+
+      // 🔥 Location match
+      if (job.location === currentJob.location) {
+        score += 2;
+      }
+
+      // 🔥 Work mode match
+      if (job.workMode === currentJob.workMode) {
+        score += 1;
+      }
+
+      return {
+        ...job.toObject(),
+        score,
+      };
+    });
+
+    // 4. Sort by score (highest first)
+    scoredJobs.sort((a, b) => b.score - a.score);
+
+    // 5. Return top 5
+    const similarJobs = scoredJobs.slice(0, 5);
+
+    res.status(200).json({
+      success: true,
+      count: similarJobs.length,
+      jobs: similarJobs,
+    });
+  } catch (error) {
+    console.error("Error fetching similar jobs:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
 
 module.exports = {
   createJob,
   getJobs,
-  getJobBySlug
+  getJobBySlug,
+  getLatestJobs,
+  getSimilarJobs
 };

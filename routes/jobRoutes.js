@@ -4,7 +4,9 @@ const router = express.Router();
 const {
   createJob,
   getJobs,
-  getJobBySlug
+  getJobBySlug,
+  getLatestJobs,
+  getSimilarJobs
 } = require("../controllers/jobController");
 
 
@@ -18,6 +20,8 @@ router.get("/jobs", getJobs);
 
 // GET job details
 router.get("/view-job/:slug", getJobBySlug);
+router.get("/get-latest-jobs", getLatestJobs);
+router.get("/similar-jobs/:jobId", getSimilarJobs);
 
 
 module.exports = router;

@@ -128,7 +128,19 @@ const jobSchema = new mongoose.Schema(
   // 🔹 Extra (future safe)
   perks: [String],                     // optional
   responsibilities: [String],
-  qualifications: [String]
+  qualifications: [String],
+  verified: { type: Boolean, default: false }, // for admin verification
+  badge: {
+  type: String,
+  enum: ["featured", "hot", "new", "remote"],
+  default: null,
+},
+
+badgeLabel: {
+  type: String,
+  default: null,
+}
+
 
 },
 { timestamps: true }
