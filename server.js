@@ -31,7 +31,9 @@ if (process.env.NODE_ENV !== "production") {
 
 const allowedOrigins = [
   "http://localhost:5173",
-  process.env.FRONTEND_URL, // 🔁 replace this
+  ...(process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(",")
+    : []),
 ];
 
 app.use(
