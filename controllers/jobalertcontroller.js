@@ -1,5 +1,5 @@
 const JobAlert = require("../models/jobalert");
-const sendEmail = require("../utils/sendEmail"); // we’ll create this
+const sendEmail = require("../utils/sendemail"); // we’ll create this
 
 exports.subscribeJobAlert = async (req, res) => {
   try {
