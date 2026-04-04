@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const authMiddleware = require("../middlewares/authmiddleware");
+const allowRoles = require("../middlewares/rolemiddleware");
 
 const {
   createJob,
@@ -14,12 +16,18 @@ const {
   getTopCompanies,
   getJobsByLocation,
   getJobsByCategories,
+  updateJob,
+  deleteJob,
+  closeJob
 
 } = require("../controllers/jobController");
 
 
 // POST job
-router.post("/post-job", createJob);
+router.post("/post-job", authMiddleware, allowRoles("admin", "super_admin"), createJob);
+router.put("/update-job/:id", authMiddleware, allowRoles("admin", "super_admin"), updateJob);
+router.delete("/delete-job/:id", authMiddleware, allowRoles("admin", "super_admin"), deleteJob);
+router.patch("/close-job/:id", authMiddleware, allowRoles("admin", "super_admin"), closeJob);
 
 
 // GET jobs (with filters)
