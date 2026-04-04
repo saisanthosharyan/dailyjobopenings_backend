@@ -12,7 +12,8 @@ const {
   getStats,
   getJobCategories,
   getTopCompanies,
-  getJobsByLocation
+  getJobsByLocation,
+  getJobsByCategories,
 
 } = require("../controllers/jobController");
 
@@ -35,7 +36,7 @@ router.get("/get-stats", getStats);
 router.get("/quick-job-categories", getJobCategories);
 router.get("/top-hiring-companies", getTopCompanies);
 router.get("/jobs-by-location", getJobsByLocation);
-
+router.get("/jobs-by-categories", getJobsByCategories);
 
 
 module.exports = router;
