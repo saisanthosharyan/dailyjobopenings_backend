@@ -9,6 +9,7 @@ const jobRoutes = require("./routes/jobRoutes");
 const jobAlertRoutes = require("./routes/jobalertroutes");
 const resourceRoutes = require("./routes/resourceRoutes").default;
 const interviewRoutes = require("./routes/interviewroutes").default
+const adminRoutes = require("./routes/adminroutes");
 
 // ✅ Cron job (works in Render)
 require("./cron/jobstatusupdater");
@@ -74,7 +75,7 @@ app.use("/api", jobRoutes);
 app.use("/api/job-alerts", jobAlertRoutes);
 app.use("/api/resources", resourceRoutes);
 app.use("/api/interview-ques",interviewRoutes);
-
+app.use("/api/admin", adminRoutes);
 
 // Root Route
 app.get("/", (req, res) => {

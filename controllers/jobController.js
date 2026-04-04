@@ -22,9 +22,19 @@ const createJob = async (req, res) => {
       { lower: true, strict: true }
     );
 
+    const existingSlug = await Job.findOne({ slug });
+
+    if (existingSlug) {
+      return res.status(400).json({
+        message: "Similar job already exists, try modifying details",
+      });
+    }
+
     const job = new Job({
       ...req.body,
-      slug
+      slug,
+      createdBy: req.admin._id,
+      postedDate: new Date(),
     });
 
     const savedJob = await job.save();
@@ -47,7 +57,133 @@ const createJob = async (req, res) => {
   }
 };
 
+const updateJob = async (req, res) => {
+  try {
+    const jobId = req.params.id;
 
+    const job = await Job.findById(jobId);
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: "Job not found",
+      });
+    }
+    if (job.status === "closed") {
+      return res.status(400).json({
+        success: false,
+        message: "cannot update a closed job",
+      })
+    }
+
+    // Update fields
+    Object.keys(req.body).forEach((key) => {
+      job[key] = req.body[key];
+    });
+
+    // 🔄 Regenerate slug if important fields changed
+    if (
+      req.body.companyName ||
+      req.body.jobTitle ||
+      req.body.location ||
+      req.body.jobRole ||
+      req.body.experienceLevel ||
+      req.body.eligibleBatches
+    ) {
+      job.slug = slugify(
+        `${job.companyName}-${job.jobTitle}-${job.location}-${job.jobRole}-${job.experienceLevel}-${job.eligibleBatches}`,
+        { lower: true, strict: true }
+      );
+    }
+
+    const updatedJob = await job.save();
+
+    res.json({
+      success: true,
+      message: "Job updated successfully",
+      data: updatedJob,
+    });
+  } catch (error) {
+    // Handle duplicate slug error
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "Duplicate job slug, try different values",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Error updating job",
+      error: error.message,
+    });
+  }
+};
+
+const deleteJob = async (req, res) => {
+  try {
+    const jobId = req.params.id;
+
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: "Job not found",
+      });
+    }
+
+    await job.deleteOne();
+
+    res.json({
+      success: true,
+      message: "Job deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error deleting job",
+      error: error.message,
+    });
+  }
+};
+
+const closeJob = async (req, res) => {
+  try {
+    const jobId = req.params.id;
+
+    const job = await Job.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: "Job not found",
+      });
+    }
+
+    if (job.status === "closed") {
+      return res.status(400).json({
+        success: false,
+        message: "Job already closed",
+      });
+    }
+
+    job.status = "closed";
+
+    const updatedJob = await job.save();
+
+    res.json({
+      success: true,
+      message: "Job closed successfully",
+      data: updatedJob,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error closing job",
+      error: error.message,
+    });
+  }
+};
 
 // GET ALL JOBS + FILTER
 const getJobs = async (req, res) => {
@@ -651,5 +787,8 @@ module.exports = {
   getJobsByLocation,
   sendJobAlerts,
   subscribeJobAlert,
-  getJobsByCategories
+  getJobsByCategories,
+  updateJob,
+  deleteJob,
+  closeJob
 };

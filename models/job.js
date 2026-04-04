@@ -65,6 +65,10 @@ const jobSchema = new mongoose.Schema(
     type: String,
     default: null,
   },
+  createdBy: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Admin"
+},
 
   status: {
     type: String,
