@@ -575,6 +575,68 @@ const subscribeJobAlert = async (req, res) => {
   }
 };
 
+const CATEGORY_FILTERS = {
+  fresher: { experienceLevel: "0-1 Years" },
+  experienced: { experienceLevel: { $ne: "0-1 Years" } },
+  remote: { workMode: "Remote" },
+  "part-time": { jobType: "Part-Time" },
+  "full-time": { jobType: "Full-Time" },
+  urgent: { badge: "hot" },
+  abroad: {
+    location: { $regex: "USA|UK|Canada|Germany|Australia", $options: "i" },
+  },
+};
+
+const getJobsByCategories = async (req, res) => {
+  try {
+    let { category, page = 1, limit = 10 } = req.query;
+
+    if (!category) {
+      return res.status(400).json({ message: "Category is required" });
+    }
+
+    // Support multiple categories
+    const categories = category.split(",");
+
+    // Build OR conditions
+    const categoryQueries = categories.map((cat) => {
+      return CATEGORY_FILTERS[cat] || {};
+    });
+
+    // Base query
+    const query = {
+      status: "active",
+      expiryDate: { $gte: new Date() },
+      $or: categoryQueries,
+    };
+
+    // Pagination
+    const skip = (page - 1) * limit;
+
+    const [jobs, total] = await Promise.all([
+      Job.find(query)
+        .sort({ postedDate: -1 })
+        .skip(skip)
+        .limit(Number(limit))
+        .select(
+          "jobTitle companyName location salary slug badge workMode jobType experienceLevel"
+        ),
+
+      Job.countDocuments(query),
+    ]);
+
+    res.status(200).json({
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / limit),
+      jobs,
+    });
+  } catch (error) {
+    console.error("Error fetching jobs:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
 module.exports = {
   createJob,
   getJobs,
@@ -588,6 +650,6 @@ module.exports = {
   getTopCompanies,
   getJobsByLocation,
   sendJobAlerts,
-  subscribeJobAlert
-
+  subscribeJobAlert,
+  getJobsByCategories
 };
