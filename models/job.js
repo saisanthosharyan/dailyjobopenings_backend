@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const slug = require("slugify");
 
 const jobSchema = new mongoose.Schema(
 {
@@ -8,12 +9,12 @@ const jobSchema = new mongoose.Schema(
   companyWebsite: String,
   companyCareersLink: String,
   aboutCompany: String,
-  
+
   // 🔹 Job Basic Info
   jobTitle: String,
   jobRole: String,
   jobDescription: String,
-  slug: { type: String, unique: true },
+  slug: { type: String, unique: true, index:true },
 
   // 🔹 Job Details
   salary: String,
@@ -86,12 +87,20 @@ jobSchema.pre("save", async function () {
   const now = new Date();
 
   // default expiry (60 days)
+if (!this.slug) {
+    this.slug = slugify(
+      `${this.jobTitle}-${this.companyName}-${Date.now()}`,
+      { lower: true, strict: true }
+    );
+  }
+
+  // default expiry (60 days)
   if (!this.expiryDate) {
     const defaultExpiry = new Date(now);
     defaultExpiry.setDate(defaultExpiry.getDate() + 60);
     this.expiryDate = defaultExpiry;
   }
-  
+
   // expiresAt = expiryDate + 15 days
   const deleteAfter = new Date(this.expiryDate);
   deleteAfter.setDate(deleteAfter.getDate() + 15);
