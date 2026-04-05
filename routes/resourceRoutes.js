@@ -1,4 +1,6 @@
 import express from "express";
+import authMiddleware from "../middlewares/authmiddleware.js";
+import allowRoles from "../middlewares/rolemiddleware.js";
 import {
   getResources,
   createResource,
@@ -13,12 +15,12 @@ const router = express.Router();
 router.get("/get-all-resources", getResources);
 
 // CREATE resource
-router.post("/create-resource", createResource);
+router.post("/create-resource",authMiddleware, allowRoles("admin", "super_admin"), createResource);
 
 // DELETE resource
-router.delete("/delete-resource/:id", deleteResource);
+router.delete("/delete-resource/:id",authMiddleware, allowRoles("admin", "super_admin"), deleteResource);
 
 //update resource
-router.put("/update-resource/:id", updateResource);
+router.put("/update-resource/:id",authMiddleware, allowRoles("admin", "super_admin"), updateResource);
 
 export default router;
