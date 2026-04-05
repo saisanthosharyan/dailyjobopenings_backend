@@ -36,6 +36,8 @@ exports.loginAdmin = async (req, res) => {
   }
 };
 
+const sendEmail = require("../utils/sendEmail");
+
 exports.createAdmin = async (req, res) => {
   try {
     const { email, role } = req.body;
@@ -45,7 +47,7 @@ exports.createAdmin = async (req, res) => {
       return res.status(400).json({ message: "Admin already exists" });
     }
 
-    // Generate temp password
+    // 🔐 Generate temp password
     const tempPassword = Math.random().toString(36).slice(-8);
 
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
@@ -57,13 +59,41 @@ exports.createAdmin = async (req, res) => {
       isTempPassword: true,
     });
 
-    // TODO: Send email here (later)
+    // ✉️ Send Email
+    const loginLink = `${process.env.FRONTEND_URL}/admin/login`;
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; padding: 20px; background:#f4f7fb;">
+        <div style="max-width: 500px; margin:auto; background:#fff; padding:25px; border-radius:10px;">
+          
+          <h2 style="color:#0f4c81;">Welcome to Daily Job Openings</h2>
+          
+          <p>Your admin account has been created.</p>
+
+          <div style="background:#f9fafb; padding:15px; border-radius:8px; margin:20px 0;">
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Temporary Password:</strong> ${tempPassword}</p>
+          </div>
+
+          <p>Please login and reset your password immediately.</p>
+
+          <a href="${loginLink}" 
+            style="display:inline-block; margin-top:15px; padding:10px 18px; background:#0f4c81; color:#fff; text-decoration:none; border-radius:6px;">
+            Login Now
+          </a>
+
+        </div>
+      </div>
+    `;
+console.log("Sending email to:", email);
+    await sendEmail(email, "Your Admin Account Details", html);
 
     res.status(201).json({
-      message: "Admin created",
-      tempPassword, // remove in production after email setup
+      message: "Admin created and email sent successfully",
     });
+
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
