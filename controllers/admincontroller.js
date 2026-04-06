@@ -42,6 +42,7 @@ exports.createAdmin = async (req, res) => {
   try {
     const { email, role } = req.body;
 
+    // 🔍 Check duplicate
     const existing = await Admin.findOne({ email });
     if (existing) {
       return res.status(400).json({ message: "Admin already exists" });
@@ -49,9 +50,9 @@ exports.createAdmin = async (req, res) => {
 
     // 🔐 Generate temp password
     const tempPassword = Math.random().toString(36).slice(-8);
-
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
+    // 💾 Create admin
     const newAdmin = await Admin.create({
       email,
       password: hashedPassword,
@@ -59,9 +60,10 @@ exports.createAdmin = async (req, res) => {
       isTempPassword: true,
     });
 
-    // ✉️ Send Email
-    const loginLink = `${process.env.FRONTEND_URL}/admin/login`;
+    // 🔗 Correct login link
+    const loginLink = `${process.env.FRONTEND_URL}/admin-login`;
 
+    // ✉️ Email HTML
     const html = `
       <div style="font-family: Arial, sans-serif; padding: 20px; background:#f4f7fb;">
         <div style="max-width: 500px; margin:auto; background:#fff; padding:25px; border-radius:10px;">
@@ -82,23 +84,34 @@ exports.createAdmin = async (req, res) => {
             Login Now
           </a>
 
+          <p style="margin-top:20px; font-size:12px; color:#777;">
+            If you did not expect this email, please ignore it.
+          </p>
+
         </div>
       </div>
     `;
-console.log("Sending email to:", email);
-try {
-  await sendEmail(email, "Your Admin Account Details", html);
-} catch (err) {
-  console.error("Email failed:", err.message);
-  // DO NOT FAIL ADMIN CREATION
-}
 
+    console.log("Sending email to:", email);
+
+    let emailSent = true;
+
+    try {
+      await sendEmail(email, "Your Admin Account Details", html);
+    } catch (err) {
+      emailSent = false;
+      console.error("Email failed:", err.message);
+    }
+
+    // ✅ Response based on email status
     res.status(201).json({
-      message: "Admin created and email sent successfully",
+      message: emailSent
+        ? "Admin created and email sent successfully"
+        : "Admin created, but email failed to send",
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("Create Admin Error:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
