@@ -28,7 +28,7 @@
     "response-time": "^2.3.4",
     "serverless-http": "^4.0.0",
     "winston": "^3.19.0",
-    "xss-clean": "^0.1.4"
+    "xss-clean": "^0.1.4",
     "slugify": "^1.6.9"
   },
   "devDependencies": {
