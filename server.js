@@ -3,12 +3,13 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
+const rateLimit = require("express-rate-limit");
 
 const connectDB = require("./config/db");
 const jobRoutes = require("./routes/jobRoutes");
 const jobAlertRoutes = require("./routes/jobalertroutes");
 const resourceRoutes = require("./routes/resourceRoutes").default;
-const interviewRoutes = require("./routes/interviewroutes").default
+const interviewRoutes = require("./routes/interviewroutes").default;
 const adminRoutes = require("./routes/adminroutes");
 
 // ✅ Cron job (works in Render)
@@ -23,10 +24,15 @@ const app = express();
 // Secure HTTP headers
 app.use(helmet());
 
-// Logging
-if (process.env.NODE_ENV !== "production") {
-  app.use(morgan("dev"));
-}
+/* =========================
+   ✅ RATE LIMITING (NEW)
+========================= */
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP
+  message: "Too many requests, please try again later",
+});
 
 /* =========================
    ✅ CORS CONFIGURATION
@@ -42,7 +48,7 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // Postman / mobile apps
+      if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
@@ -58,7 +64,19 @@ app.use(
    ✅ MIDDLEWARE
 ========================= */
 
-app.use(express.json());
+// ✅ JSON LIMIT (NEW)
+app.use(express.json({ limit: "10kb" }));
+
+// Logging (only dev)
+if (process.env.NODE_ENV !== "production") {
+  app.use(morgan("dev"));
+}
+
+/* =========================
+   ✅ APPLY RATE LIMIT TO API (NEW)
+========================= */
+
+app.use("/api", apiLimiter);
 
 /* =========================
    ✅ DATABASE CONNECTION
@@ -70,11 +88,10 @@ connectDB();
    ✅ ROUTES
 ========================= */
 
-
 app.use("/api", jobRoutes);
 app.use("/api/job-alerts", jobAlertRoutes);
 app.use("/api/resources", resourceRoutes);
-app.use("/api/interview-ques",interviewRoutes);
+app.use("/api/interview-ques", interviewRoutes);
 app.use("/api/admin", adminRoutes);
 
 // Root Route
@@ -82,21 +99,25 @@ app.get("/", (req, res) => {
   res.send("Daily Job Openings API Running 🚀");
 });
 
-// Health Check (important for Render)
+// Health Check
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK" });
 });
 
 /* =========================
-   ✅ GLOBAL ERROR HANDLER
+   ✅ GLOBAL ERROR HANDLER (FIXED)
 ========================= */
 
-app.use((err, req, res, next) => {
-  console.error("Error:", err.message);
+const isProd = process.env.NODE_ENV === "production";
 
-  res.status(500).json({
+app.use((err, req, res, next) => {
+  console.error("Error:", err);
+
+  res.status(err.status || 500).json({
     success: false,
-    message: err.message || "Internal Server Error",
+    message: isProd
+      ? "Something went wrong"
+      : err.message,
   });
 });
 

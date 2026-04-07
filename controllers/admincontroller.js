@@ -61,7 +61,7 @@ exports.createAdmin = async (req, res) => {
     });
 
     // 🔗 Correct login link
-    const loginLink = `${process.env.FRONTEND_URL}/admin-login`;
+    const loginLink = "https://dailyjobopenings.online/admin/login";
 
     // ✉️ Email HTML
     const html = `

@@ -34,4 +34,8 @@ const interviewSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+interviewSchema.index({category: 1});
+interviewSchema.index({level: 1});
+interviewSchema.index({createdAt : -1});
+
 module.exports = mongoose.model("Interview", interviewSchema);
