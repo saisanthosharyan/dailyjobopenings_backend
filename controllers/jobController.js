@@ -824,7 +824,7 @@ const sendJobAlerts = asyncHandler(async (job) => {
         <p><b>Experience:</b> ${job.experienceLevel}</p>
         <p><b>Type:</b> ${job.jobType}</p>
 
-        <a href="${process.env.FRONTEND_URL}/jobs/${job.slug}" style="color:blue;">
+        <a href="https://dailyjobopenings.online/view-job/${job.slug}" style="color:blue;">
           Apply Now
         </a>
 
