@@ -4,6 +4,7 @@ const JobAlert = require("../models/jobalert");
 const sendEmail = require("../utils/sendemail");
 const asyncHandler = require("../utils/asyncHandler");
 const redis = require("../utils/redisClient");
+const { findOrCreateCompany } = require("../services/companyService");
 
 // CREATE JOB
 const createJob = asyncHandler(async (req, res) => {
@@ -14,13 +15,21 @@ const createJob = asyncHandler(async (req, res) => {
       location,
       jobRole,
       experienceLevel,
-      eligibleBatches,
-      jobCategory,
-      workMode
+      eligibleBatches
     } = req.body;
 
+    if (!companyName || !jobTitle || !location) {
+      return res.status(400).json({
+        message: "Company name, job title and location are required"
+      });
+    }
+
+    // 🔹 Get OR create company (based on your flow)
+    const company = await findOrCreateCompany(req.body, req.admin._id);
+
+    // 🔹 Slug
     const slug = slugify(
-      `${companyName}-${jobTitle}-${location}-${jobRole}-${experienceLevel}-${eligibleBatches}`,
+      `${company.companyName}-${jobTitle}-${location}-${jobRole || ""}-${experienceLevel || ""}-${eligibleBatches || ""}`,
       { lower: true, strict: true }
     );
 
@@ -28,12 +37,18 @@ const createJob = asyncHandler(async (req, res) => {
 
     if (existingSlug) {
       return res.status(400).json({
-        message: "Similar job already exists, try modifying details",
+        message: "Similar job already exists"
       });
     }
 
     const job = new Job({
       ...req.body,
+
+      // 🔥 Link + cache
+      company: company._id,
+      companyName: company.companyName,
+      companyLogo: company.companyLogo,
+
       slug,
       createdBy: req.admin._id,
       postedDate: new Date(),
@@ -41,7 +56,6 @@ const createJob = asyncHandler(async (req, res) => {
 
     const savedJob = await job.save();
 
-    // 🔥 TRIGGER ALERT SYSTEM
     await sendJobAlerts(savedJob);
 
     res.status(201).json({
@@ -279,6 +293,81 @@ const getJobs = asyncHandler(async (req, res) => {
 //     });
 //   }
 // });
+
+const getDynamicCategories = asyncHandler(async (req, res) => {
+  try {
+    const cacheKey = "dynamic_categories_cache";
+
+    // Attempt to get from Redis
+    if (redis) {
+      try {
+        const cached = await redis.get(cacheKey);
+        if (cached) {
+          return res.status(200).json(JSON.parse(cached));
+        }
+      } catch (err) {
+        // Safe fail
+      }
+    }
+
+    // Group jobs by jobCategory
+    const categories = await Job.aggregate([
+      { 
+        $match: { 
+          status: "active", 
+          expiresAt: { $gt: new Date() },
+          jobCategory: { $ne: null, $ne: "" }
+        } 
+      },
+      { 
+        $group: { 
+          _id: "$jobCategory", 
+          count: { $sum: 1 } 
+        } 
+      },
+      { 
+        $project: { 
+          name: "$_id", 
+          count: 1, 
+          _id: 0 
+        } 
+      },
+      { $sort: { count: -1 } }
+    ]);
+
+    // Get total active jobs
+    const allJobsCount = await Job.countDocuments({
+      status: "active",
+      expiresAt: { $gt: new Date() }
+    });
+
+    const response = {
+      success: true,
+      categories: [
+        { name: "All Jobs", count: allJobsCount },
+        ...categories
+      ]
+    };
+
+    // Attempt to set to Redis (300 seconds = 5 mins)
+    if (redis) {
+      try {
+        await redis.set(cacheKey, JSON.stringify(response), "EX", 300);
+      } catch (err) {
+        // Safe fail
+      }
+    }
+
+    res.status(200).json(response);
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching job categories",
+      error: error.message
+    });
+  }
+});
 
 const getJobBySlug = asyncHandler(async (req, res) => {
   const { slug } = req.params;
@@ -740,7 +829,6 @@ const getTopCompanies = asyncHandler(async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: formatted
     });
 
   } catch (error) {
@@ -1024,5 +1112,6 @@ module.exports = {
   updateJob,
   deleteJob,
   closeJob,
-  getTickerJobs
+  getTickerJobs,
+  getDynamicCategories
 };

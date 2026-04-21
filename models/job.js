@@ -3,6 +3,13 @@ const slug = require("slugify");
 
 const jobSchema = new mongoose.Schema(
 {
+  //company reference
+  company:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Company",
+    required: true,
+    index: true
+  },
   // 🔹 Company Info
   companyLogo: String,
   companyName: String,
@@ -11,14 +18,14 @@ const jobSchema = new mongoose.Schema(
   aboutCompany: String,
 
   // 🔹 Job Basic Info
-  jobTitle: String,
+  jobTitle: { type: String, required: true },
   jobRole: String,
-  jobDescription: String,
+  jobDescription: { type: String, required: true },
   slug: { type: String, unique: true, index:true },
 
   // 🔹 Job Details
   salary: String,
-  location: String,
+  location: { type: String, required: true },
   workMode: String,
   jobType: String,
   jobCategory: String,
@@ -51,7 +58,12 @@ const jobSchema = new mongoose.Schema(
   jobLink: String,
 
   // 🔹 Extra
+  // 🔹 Perks (with control)
   perks: [String],
+  useCompanyPerks: {
+    type: Boolean,
+    default: true
+  },
   responsibilities: [String],
   qualifications: [String],
   verified: { type: Boolean, default: false },

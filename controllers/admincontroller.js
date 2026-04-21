@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const generateToken = require("../utils/generatetoken");
 const sendEmail = require("../utils/sendemail");
 const asyncHandler = require("../utils/asyncHandler");
+const Company = require("../models/companies");
 
 // LOGIN
 exports.loginAdmin = asyncHandler(async (req, res) => {
@@ -274,5 +275,146 @@ exports.updateAdmin = asyncHandler(async (req, res) => {
   } catch (error) {
     logger.error("Update Admin Error:", error);
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+exports.createCompany = asyncHandler(async (req, res) => {
+  try {
+    let { companyName } = req.body;
+
+    if (!companyName) {
+      return res.status(400).json({ message: "Company name is required" });
+    }
+
+    const normalizedName = companyName.toLowerCase().trim();
+
+    const existingCompany = await Company.findOne({ companyName: normalizedName });
+
+    if (existingCompany) {
+      return res.status(400).json({
+        message: "Company already exists"
+      });
+    }
+
+    const company = await Company.create({
+      ...req.body,
+      companyName: normalizedName,
+      createdBy: req.admin._id
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Company created successfully",
+      data: company
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error creating company",
+      error: error.message
+    });
+  }
+});
+
+exports.getCompanies = asyncHandler(async (req, res) => {
+  try {
+    const { search = "", page = 1, limit = 10 } = req.query;
+
+    const query = search
+      ? { companyName: { $regex: search.toLowerCase(), $options: "i" } }
+      : {};
+
+    const companies = await Company.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    const total = await Company.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      total,
+      page: Number(page),
+      data: companies
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching companies",
+      error: error.message
+    });
+  }
+});
+
+exports.updateCompany = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const company = await Company.findById(id);
+
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    // Normalize name if updating
+    if (req.body.companyName) {
+      req.body.companyName = req.body.companyName.toLowerCase().trim();
+    }
+
+    const updatedCompany = await Company.findByIdAndUpdate(
+      id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Company updated successfully",
+      data: updatedCompany
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error updating company",
+      error: error.message
+    });
+  }
+});
+
+exports.deleteCompany = asyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const company = await Company.findById(id);
+
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    // Check if jobs exist
+    const jobExists = await Job.exists({ company: id });
+
+    if (jobExists) {
+      return res.status(400).json({
+        message: "Cannot delete company with existing jobs"
+      });
+    }
+
+    await Company.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: "Company deleted successfully"
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error deleting company",
+      error: error.message
+    });
   }
 });
