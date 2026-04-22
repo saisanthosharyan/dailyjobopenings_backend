@@ -433,7 +433,7 @@ exports.extractJobFromURL = asyncHandler(async (req, res) => {
 
     // 🔥 Call Python service
     const response = await axios.post(
-      "https://dailyjobopenings-python-backend.onrender.com/extract-job-using-link",
+      `${process.env.PYTHON_SERVICE_URL}/extract-job-using-link`,
       { url }
     );
 
