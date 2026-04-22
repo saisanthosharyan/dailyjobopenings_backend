@@ -4,6 +4,7 @@ const generateToken = require("../utils/generatetoken");
 const sendEmail = require("../utils/sendemail");
 const asyncHandler = require("../utils/asyncHandler");
 const Company = require("../models/companies");
+const axios = require("axios");
 
 // LOGIN
 exports.loginAdmin = asyncHandler(async (req, res) => {
@@ -415,6 +416,48 @@ exports.deleteCompany = asyncHandler(async (req, res) => {
       success: false,
       message: "Error deleting company",
       error: error.message
+    });
+  }
+});
+
+exports.extractJobFromURL = asyncHandler(async (req, res) => {
+  try {
+    const { url } = req.body;
+
+    if (!url) {
+      return res.status(400).json({
+        success: false,
+        message: "URL is required"
+      });
+    }
+
+    // 🔥 Call Python service
+    const response = await axios.post(
+      "https://dailyjobopenings-python-backend.onrender.com/extract-job-using-link",
+      { url }
+    );
+
+    const data = response.data;
+
+    if (!data.success) {
+      return res.status(400).json({
+        success: false,
+        message: data.message || "Extraction failed"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: data.data,
+      source: data.source
+    });
+
+  } catch (error) {
+    console.error("Extraction error:", error.message);
+
+    res.status(500).json({
+      success: false,
+      message: "Error extracting job details"
     });
   }
 });

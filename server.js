@@ -121,8 +121,8 @@ app.use((err, req, res, next) => {
       : err.message,
   });
 });
-app.use(mongoSanitize()); // Prevent NoSQL injection
-app.use(xss()); // Prevent XSS attacks
+// app.use(mongoSanitize()); // Prevent NoSQL injection
+// app.use(xss()); // Prevent XSS attacks
 
 /* =========================
    ✅ SERVER START
