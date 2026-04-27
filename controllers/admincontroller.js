@@ -4,6 +4,7 @@ const generateToken = require("../utils/generatetoken");
 const sendEmail = require("../utils/sendemail");
 const asyncHandler = require("../utils/asyncHandler");
 const Company = require("../models/companies");
+const {checkDuplicateJob} = require("../services/duplicateCheckService");
 const axios = require("axios");
 
 // LOGIN
@@ -503,3 +504,34 @@ exports.extractJobFromText = asyncHandler(async (req, res) => {
     });
   }
 });
+
+// controllers/jobController.js
+
+exports.checkDuplicate = async (req, res) => {
+
+  try {
+
+    const similarJobs =
+      await checkDuplicateJob(req.body);
+
+    return res.status(200).json({
+      success: true,
+      duplicateFound:
+        similarJobs.length > 0,
+      similarJobs
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Duplicate Check Error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+
+  }
+};

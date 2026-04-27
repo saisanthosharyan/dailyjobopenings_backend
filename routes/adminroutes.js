@@ -13,7 +13,8 @@ const {
   updateCompany,
   deleteCompany,
   extractJobFromURL,
-  extractJobFromText
+  extractJobFromText,
+  checkDuplicate
 } = require("../controllers/admincontroller");
 
 const authMiddleware = require("../middlewares/authmiddleware");
@@ -93,5 +94,12 @@ router.post(
   authMiddleware,
   allowRoles("admin", "super_admin"),
   extractJobFromText
+);
+
+router.post(
+  "/check-duplicate",
+  authMiddleware,
+  allowRoles("admin", "super_admin"),
+  checkDuplicate
 );
 module.exports = router;
