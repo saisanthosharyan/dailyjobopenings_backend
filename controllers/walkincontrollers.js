@@ -1,4 +1,4 @@
-const WalkInJob = require ("../models/walkin");
+const WalkInJob = require ("../models/WalkIn");
 const slugify = require ("slugify");
 
 
