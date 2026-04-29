@@ -13,6 +13,8 @@ const resourceRoutes = require("./routes/resourceRoutes").default;
 const interviewRoutes = require("./routes/interviewroutes").default;
 const adminRoutes = require("./routes/adminroutes");
 const examRoutes = require("./routes/ExamRoutes");
+const walkinRoutes = require("./routes/walkinRoutes");
+
 // ✅ Cron job (works in Render)
 require("./cron/jobstatusupdater");
 
@@ -94,6 +96,7 @@ app.use("/api/job-alerts", jobAlertRoutes);
 app.use("/api/resources", resourceRoutes);
 app.use("/api/interview-ques", interviewRoutes);
 app.use("/api/exams", examRoutes);
+app.use("/api/walkins", walkinRoutes);
 app.use("/api/admin", adminRoutes);
 
 // Root Route
