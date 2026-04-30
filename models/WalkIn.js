@@ -4,14 +4,12 @@ const walkInJobSchema = new mongoose.Schema(
   {
     walkintitle: {
       type: String,
-      required: true,
       trim: true,
       index: true
     },
 
     walkinslug: {
       type: String,
-      required: true,
       unique: true,
       lowercase: true,
       index: true
@@ -19,7 +17,6 @@ const walkInJobSchema = new mongoose.Schema(
 
     companyName: {
       type: String,
-      required: true,
       trim: true,
       index: true
     },
@@ -34,31 +31,11 @@ const walkInJobSchema = new mongoose.Schema(
 
     roleCategory: {
       type: String,
-      enum: [
-        "Software",
-        "Support",
-        "BPO",
-        "Finance",
-        "Sales",
-        "Testing",
-        "Internship",
-        "Hardware",
-        "Networking",
-        "Other"
-      ],
-      default: "Other",
       index: true
     },
 
     employmentType: {
       type: String,
-      enum: [
-        "Full Time",
-        "Internship",
-        "Contract",
-        "Part Time"
-      ],
-      default: "Full Time"
     },
 
     experience: {
@@ -94,14 +71,12 @@ const walkInJobSchema = new mongoose.Schema(
 
     location: {
       type: String,
-      required: true,
       trim: true,
       index: true
     },
 
     address: {
       type: String,
-      required: true
     },
 
     googleMapsLink: {
@@ -111,13 +86,11 @@ const walkInJobSchema = new mongoose.Schema(
     walkInDetails: {
       startDate: {
         type: Date,
-        required: true,
         index: true
       },
 
       endDate: {
         type: Date,
-        required: true,
         index: true
       },
 
@@ -127,13 +100,11 @@ const walkInJobSchema = new mongoose.Schema(
 
       venue: {
         type: String,
-        required: true
       }
     },
 
     description: {
       type: String,
-      required: true
     },
 
     responsibilities: [
@@ -186,10 +157,28 @@ const walkInJobSchema = new mongoose.Schema(
       index: true
     },
 
-    isFeatured: {
+    // isFeatured: {
+    //   type: Boolean,
+    //   default: false,
+    //   index: true
+    // },
+
+    isVerified: {
       type: Boolean,
-      default: false,
+      default: true,
       index: true
+    },
+
+    highlight_type_label: {
+      type: String,
+      index: true,
+      default: "featured"
+    },
+
+    walkin_type_label: {
+      type: String,
+      index: true,
+      default: "Walk-in Drive"
     },
 
     views: {
