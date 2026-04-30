@@ -80,7 +80,6 @@ const examSchema = new mongoose.Schema(
 
   examMode: {
     type: String,
-    enum: ["Online", "Offline", "Hybrid"]
   },
 
   applicationStartDate: {
