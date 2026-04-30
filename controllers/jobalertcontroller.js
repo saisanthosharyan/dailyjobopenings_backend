@@ -63,6 +63,7 @@ const JobAlert = require("../models/jobalert");
 const sendEmail = require("../utils/sendemail");
 const asyncHandler = require("../utils/asyncHandler");
 
+
 exports.subscribeJobAlert = asyncHandler(async (req, res) => {
   let {
     email,
@@ -145,7 +146,7 @@ exports.subscribeJobAlert = asyncHandler(async (req, res) => {
   // 📩 SEND VERIFICATION EMAIL
   // ===============================
 
-  const verifyURL = `${process.env.CLIENT_URL}/verify-job-alert?token=${token}`;
+  const verifyURL = `${process.env.FRONTEND_URL}/user/verify-job-alert?token=${token}`;
 
   await sendEmail(
     email,
@@ -225,7 +226,7 @@ exports.sendEditLink = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  const editURL = `${process.env.CLIENT_URL}/edit-job-alert?token=${token}`;
+  const editURL = `${process.env.FRONTEND_URL}/user/edit-job-alert?token=${token}`;
 
   await sendEmail(
     email,
