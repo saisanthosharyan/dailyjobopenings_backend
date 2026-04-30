@@ -146,7 +146,7 @@ exports.subscribeJobAlert = asyncHandler(async (req, res) => {
   // 📩 SEND VERIFICATION EMAIL
   // ===============================
 
-  const verifyURL = `${process.env.FRONTEND_URL}/user/verify-job-alert?token=${token}`;
+  const verifyURL = `https://dailyjobopenings.online/user/verify-job-alert?token=${token}`;
 
   await sendEmail(
     email,
@@ -226,7 +226,7 @@ exports.sendEditLink = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  const editURL = `${process.env.FRONTEND_URL}/user/edit-job-alert?token=${token}`;
+  const editURL = `https://dailyjobopenings.online/user/edit-job-alert?token=${token}`;
 
   await sendEmail(
     email,
