@@ -2,6 +2,10 @@ const mongoose = require("mongoose");
 
 const walkInJobSchema = new mongoose.Schema(
   {
+    company: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Company"
+},
     walkintitle: {
       type: String,
       trim: true,
@@ -156,12 +160,6 @@ const walkInJobSchema = new mongoose.Schema(
       default: true,
       index: true
     },
-
-    // isFeatured: {
-    //   type: Boolean,
-    //   default: false,
-    //   index: true
-    // },
 
     isVerified: {
       type: Boolean,

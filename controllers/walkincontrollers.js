@@ -1,5 +1,7 @@
 const WalkInJob = require ("../models/WalkIn");
 const slugify = require ("slugify");
+const asyncHandler = require("express-async-handler");
+const { findOrCreateCompany } = require("../services/companyService");
 
 
 
@@ -7,7 +9,82 @@ const slugify = require ("slugify");
    CREATE WALK-IN
 ====================================================== */
 
-exports.createWalkIn = async (req, res) => {
+// exports.createWalkIn = async (req, res) => {
+//   try {
+//     const {
+//       walkintitle,
+//       companyName,
+//       location,
+//       walkInDetails
+//     } = req.body;
+
+//     // Basic validation
+//     if (
+//       !walkintitle ||
+//       !companyName ||
+//       !location ||
+//       !walkInDetails?.startDate ||
+//       !walkInDetails?.endDate
+//     ) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Required fields are missing"
+//       });
+//     }
+
+//     // Generate slug
+//     const baseSlug = slugify(walkintitle, {
+//       lower: true,
+//       strict: true
+//     });
+
+//     let walkinslug = baseSlug;
+
+//     // Handle duplicate slug
+//     const existingSlug = await WalkInJob.findOne({ walkinslug });
+
+//     if (existingSlug) {
+//       walkinslug = `${baseSlug}-${Date.now()}`;
+//     }
+
+//     // Duplicate detection
+//     const existingWalkIn = await WalkInJob.findOne({
+//       companyName: companyName.trim(),
+//       walkintitle: walkintitle.trim(),
+//       "walkInDetails.startDate": walkInDetails.startDate
+//     });
+
+//     if (existingWalkIn) {
+//       return res.status(409).json({
+//         success: false,
+//         message: "Walk-In already exists"
+//       });
+//     }
+
+//     // Create walk-in
+//     const walkIn = await WalkInJob.create({
+//       ...req.body,
+//       walkinslug
+//     });
+
+//     return res.status(201).json({
+//       success: true,
+//       message: "Walk-In created successfully",
+//       walkIn
+//     });
+
+//   } catch (error) {
+//     console.error("CREATE WALK-IN ERROR:", error);
+
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to create walk-in",
+//       error: error.message
+//     });
+//   }
+// };
+
+exports.createWalkIn = asyncHandler(async (req, res) => {
   try {
     const {
       walkintitle,
@@ -16,7 +93,7 @@ exports.createWalkIn = async (req, res) => {
       walkInDetails
     } = req.body;
 
-    // Basic validation
+    // ✅ Validation
     if (
       !walkintitle ||
       !companyName ||
@@ -30,7 +107,10 @@ exports.createWalkIn = async (req, res) => {
       });
     }
 
-    // Generate slug
+    // 🔥 SAME AS JOB FLOW
+    const company = await findOrCreateCompany(req.body, req.admin?._id);
+
+    // ✅ Slug
     const baseSlug = slugify(walkintitle, {
       lower: true,
       strict: true
@@ -38,16 +118,15 @@ exports.createWalkIn = async (req, res) => {
 
     let walkinslug = baseSlug;
 
-    // Handle duplicate slug
     const existingSlug = await WalkInJob.findOne({ walkinslug });
 
     if (existingSlug) {
       walkinslug = `${baseSlug}-${Date.now()}`;
     }
 
-    // Duplicate detection
+    // ✅ Duplicate check
     const existingWalkIn = await WalkInJob.findOne({
-      companyName: companyName.trim(),
+      companyName: company.companyName, // 🔥 use normalized
       walkintitle: walkintitle.trim(),
       "walkInDetails.startDate": walkInDetails.startDate
     });
@@ -59,16 +138,25 @@ exports.createWalkIn = async (req, res) => {
       });
     }
 
-    // Create walk-in
+    // ✅ Create Walk-In
     const walkIn = await WalkInJob.create({
       ...req.body,
-      walkinslug
+
+      // 🔥 IMPORTANT (same as job)
+      company: company._id,
+      companyName: company.companyName,
+      companyLogo: company.companyLogo,
+      companyWebsite: company.companyWebsite,
+
+      walkinslug,
+      postedBy: req.admin?._id
     });
 
     return res.status(201).json({
       success: true,
       message: "Walk-In created successfully",
-      walkIn
+      walkIn,
+      companyCreated: company._wasCreated || false // optional flag
     });
 
   } catch (error) {
@@ -80,7 +168,7 @@ exports.createWalkIn = async (req, res) => {
       error: error.message
     });
   }
-};
+});
 
 
 
